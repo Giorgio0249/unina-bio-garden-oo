@@ -1,6 +1,8 @@
 package it.unina.biogarden.dao;
 
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -285,5 +287,88 @@ class NotificaDaoPg implements NotificaDao{
 				throw e;
 			}
 		}
-
+	 
+	 
+	 @Override
+	 public List<Notifica> genereAutomaticheDaView(String email_prop)throws Exception{
+		 
+		 List<Notifica> out=new ArrayList<>();
+		 
+			//attività in ritardo
+			String sqlRitardo="""
+					SELECT
+						   v.id_attivita,
+						   v.tipoAttivita,
+						   v.dataPianificata,
+						   v.id_coltura,
+						   p.id_progetto,
+						   p.nome AS progetto_nome
+					FROM vw_attivita_in_ritardo v
+					JOIN Coltura c ON v.id_coltura = c.id_coltura
+					JOIN ProgettoStagionale p ON c.fk_progetto = p.id_progetto
+					JOIN Lotto l ON p.fk_lotto = l.id_lotto
+					WHERE l.fk_proprietario = ?
+					""";
+			
+			//attività imminenti
+			String sqlImminenti="""
+					SELECT
+						   v.id_attivita,
+						   v.tipoAttivita,
+						   v.dataPianificata,
+						   v.id_coltura,
+						   p.id_progetto,
+						   p.nome AS progetto_nome
+					FROM vw_attivita_prossime v
+					JOIN Coltura c ON v.id_coltura = c.id_coltura
+					JOIN ProgettoStagionale p ON c.fk_progetto = p.id_progetto
+					JOIN Lotto l ON p.fk_lotto = l.id_lotto
+					WHERE l.fk_proprietario = ?
+					""";
+			
+			try(Connection conn=ConnectionFactory.getInstance().getConnection();
+				PreparedStatement ps=conn.prepareStatement(sqlRitardo)){
+				
+				ps.setString(1, email_prop);
+				
+				try(ResultSet rs=ps.executeQuery()){
+					
+					while(rs.next()) {
+						String titolo="Attività in ritardo: "+rs.getString("tipoAttivita");
+						String messaggio="L'attività era prevista per "+rs.getObject("dataPianificata", LocalDate.class)+
+											" nel progetto "+rs.getString("progetto_nome");
+						
+						out.add(new Notifica(0, email_prop, null, titolo, messaggio,
+												TipoNotifica.ATTIVITA_IN_RITARDO, LocalDateTime.now(),
+												rs.getObject("id_progetto", Integer.class),
+												rs.getObject("id_attivita", Integer.class)));
+					}
+					
+				}
+			}
+			
+			try(Connection conn=ConnectionFactory.getInstance().getConnection();
+				PreparedStatement ps=conn.prepareStatement(sqlImminenti)){
+				
+				ps.setString(1, email_prop);
+				
+				try(ResultSet rs=ps.executeQuery()){
+					
+					while(rs.next()) {
+						String titolo="Attività imminente: "+rs.getString("tipoAttivita");
+						String messaggio="Attività prevista per "+rs.getObject("dataPianificata", LocalDate.class)+
+											" nel progetto "+rs.getString("progetto_nome");	
+	
+						out.add(new Notifica(0, email_prop, null, titolo, messaggio,
+												TipoNotifica.ATTIVITA_IMMINENTE, LocalDateTime.now(),
+												rs.getObject("id_progetto", Integer.class),
+												rs.getObject("id_attivita", Integer.class)));
+					}
+				}
+			}
+			
+			return out;
+			
+	 }
+	 
 }

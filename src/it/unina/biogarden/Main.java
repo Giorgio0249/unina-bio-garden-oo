@@ -238,16 +238,14 @@ public class Main {
 			//ProgettoService ppp=new ProgettoService();
 			//ppp.findAllByProprietario("owner1@biogarden.it").forEach(System.out::println);
 			
-			/*ReportService r=new ReportService();
-			r.getReportPerLotto(pp, 4).forEach(System.out::println);
-			*/
+			
 			
 			ProprietarioService ps=new ProprietarioService();
-			Proprietario prop=ps.authenticate("owner2@biogarden.it", "Password2");
+			Proprietario prop=ps.authenticate("owner1@biogarden.it", "Password1");
 
-			/*NotificaService ns=new NotificaService();
+			NotificaService ns=new NotificaService();
 			
-			ns.generaAutomaticheDaView(prop);*/
+			//ns.generaAutomaticheDaView(prop);
 			
 			RaccoltaService rs=new RaccoltaService();
 			//rs.deleteRaccoltaPerProprietario(prop, 14);
@@ -256,10 +254,12 @@ public class Main {
 			ProgettoStagionale prog=new ProgettoStagionale(1111, "aujajws", Stagione.INVERNO, 2026, 
 															LocalDate.of(2026, 12, 1), LocalDate.of(2026, 12, 25), 4, null);
 			
-			a.updateStatoAttivitaPerProprietario(prop, 9, StatoAttivita.COMPLETATA);
+			//a.updateStatoAttivitaPerProprietario(prop, 9, StatoAttivita.COMPLETATA);
+			ns.generaAutomaticheDaView(prop);
 			
+			ReportService r=new ReportService();
+			r.getReportPerLotto(prop, 3).forEach(System.out::println);
 			
-			//ns.generaAutomaticheDaView(prop);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

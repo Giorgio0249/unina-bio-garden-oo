@@ -15,16 +15,5 @@ public class TestConn {
 		}
 		
 	}
-
-	public ProgettoStagionale findById(int id_progetto) throws Exception{
-		ProgettoStagionale progetto=progettoDao.findById(id_progetto);
-		if(progetto==null) {
-			throw new IllegalArgumentException("Nessun progetto con id ("+id_progetto+") trovato.");
-		}
-		else
-			return progetto;
-	}
 	
-	
-
 }

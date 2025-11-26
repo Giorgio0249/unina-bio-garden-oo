@@ -19,26 +19,20 @@ import it.unina.biogarden.model.StatoAttivita;
 public class AttivitaService {
 	
 	private final AttivitaDao attivitaDao;
-	private final ColturaDao colturaDao;
-	private final LottoDao lottoDao;
-	private final ProgettoDao progettoDao;
 	
 	private final ColturaService colturaService;
 	private final ProgettoService progettoService;
 	private final LottoService lottoService;
 
-	public AttivitaService(AttivitaDao attivitaDao, ColturaDao colturaDao, LottoDao lottoDao, ProgettoDao progettoDao, ColturaService colturaService, ProgettoService progettoService, LottoService lottoService) {
+	public AttivitaService(AttivitaDao attivitaDao, ColturaService colturaService, ProgettoService progettoService, LottoService lottoService) {
 		this.attivitaDao=attivitaDao;
-		this.colturaDao=colturaDao;
-		this.lottoDao=lottoDao;
-		this.progettoDao=progettoDao;
 		this.colturaService=colturaService;
 		this.progettoService=progettoService;
 		this.lottoService=lottoService;
 	}
 	
 	public AttivitaService() {
-		this(DaoFactory.createAttivitaDao(), DaoFactory.createColturaDao(), DaoFactory.createLottoDao(), DaoFactory.createProgettoDao(), new ColturaService(), new ProgettoService(), new LottoService());
+		this(DaoFactory.createAttivitaDao(), new ColturaService(), new ProgettoService(), new LottoService());
 	}
 	
 	

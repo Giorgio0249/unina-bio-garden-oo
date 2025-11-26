@@ -4,7 +4,6 @@ package it.unina.biogarden.service;
 import java.util.List;
 
 import it.unina.biogarden.dao.DaoFactory;
-import it.unina.biogarden.dao.LottoDao;
 import it.unina.biogarden.dao.ReportLottoDao;
 import it.unina.biogarden.model.Lotto;
 import it.unina.biogarden.model.Proprietario;

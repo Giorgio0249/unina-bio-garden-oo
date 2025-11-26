@@ -18,5 +18,7 @@ public interface NotificaDao {
 	public List<Notifica> findByProgetto(int id_progetto)throws Exception;
 	
 	public int delete(int id_notifica)throws Exception;
+	
+	public List<Notifica> genereAutomaticheDaView(String email_prop)throws Exception;
 
 }

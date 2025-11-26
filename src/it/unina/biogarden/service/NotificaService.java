@@ -176,82 +176,29 @@ public class NotificaService {
 	
 	public void generaAutomaticheDaView(Proprietario proprietario)throws Exception{
 		
-		try(Connection conn=ConnectionFactory.getInstance().getConnection()){
-			
-			//attività in ritardo
-			String sqlRitardo="""
-					SELECT
-						   v.id_attivita,
-						   v.tipoAttivita,
-						   v.dataPianificata,
-						   v.id_coltura,
-						   p.id_progetto,
-						   p.nome AS progetto_nome
-					FROM vw_attivita_in_ritardo v
-					JOIN Coltura c ON v.id_coltura = c.id_coltura
-					JOIN ProgettoStagionale p ON c.fk_progetto = p.id_progetto
-					JOIN Lotto l ON p.fk_lotto = l.id_lotto
-					WHERE l.fk_proprietario = ?
-					""";
-			
-			try(PreparedStatement ps=conn.prepareStatement(sqlRitardo)){
-				ps.setString(1, proprietario.getEmail());
-				
-				try(ResultSet rs=ps.executeQuery()){
-					while(rs.next()) {
-						
-						String titolo="Attività in ritardo: "+rs.getString("tipoAttivita");
-						String messaggio="L'attività era prevista per "+rs.getObject("dataPianificata", LocalDate.class)+
-											" nel progetto "+rs.getString("progetto_nome");
-						
-						this.createNotificaPerTutti(proprietario, 
-													titolo, 
-													messaggio, 
-													TipoNotifica.ATTIVITA_IN_RITARDO, 
-													rs.getInt("id_progetto"), 
-													rs.getInt("id_attivita"));
-					}
-				}
-			}
-			
-			//attività imminenti
-			String sqlImminenti="""
-					SELECT
-						   v.id_attivita,
-						   v.tipoAttivita,
-						   v.dataPianificata,
-						   v.id_coltura,
-						   p.id_progetto,
-						   p.nome AS progetto_nome
-					FROM vw_attivita_prossime v
-					JOIN Coltura c ON v.id_coltura = c.id_coltura
-					JOIN ProgettoStagionale p ON c.fk_progetto = p.id_progetto
-					JOIN Lotto l ON p.fk_lotto = l.id_lotto
-					WHERE l.fk_proprietario = ?
-					""";
-			
-			try(PreparedStatement ps=conn.prepareStatement(sqlImminenti)){
-				
-				ps.setString(1, proprietario.getEmail());
-				
-				try(ResultSet rs=ps.executeQuery()){
-					
-					while(rs.next()) {
-						
-						String titolo="Attività imminente: "+rs.getString("tipoAttivita");
-						String messaggio="Attività prevista per "+rs.getObject("dataPianificata", LocalDate.class)+
-											" nel progetto "+rs.getString("progetto_nome");	
-						
-						this.createNotificaPerTutti(proprietario,
-													titolo, 
-													messaggio, 
-													TipoNotifica.ATTIVITA_IMMINENTE, 
-													rs.getInt("id_progetto"), 
-													rs.getInt("id_attivita"));
-					}
-				}
-			}
+		List<Notifica> notificheDaCreare=notificaDao.genereAutomaticheDaView(proprietario.getEmail());
+		
+		if(notificheDaCreare.isEmpty()) {
+			System.out.println("Nessuna notifica automatica da generare.");
+			return;
 		}
+		
+		int count=0;
+		
+		for(Notifica n:notificheDaCreare) {
+			
+			this.createNotificaPerTutti(proprietario,
+										n.getTitolo(), 
+										n.getMessaggio(), 
+										n.getTipo(), 
+										n.getFk_progetto(), 
+										n.getFk_attivita());
+			
+			count++;
+		}
+		
+		System.out.println("Generazione notifiche automatiche completata. Inserite "+count+" notifiche nel DB.");
+		
 	}
 
 }
