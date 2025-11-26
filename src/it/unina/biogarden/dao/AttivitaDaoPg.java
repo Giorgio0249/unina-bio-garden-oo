@@ -128,7 +128,7 @@ import java.time.LocalDate;
 				UPDATE Attivita
 				SET tipoAttivita = ?::TipoAttivita,
 					stato = ?::StatoAttivita,
-					dataPianificazione = ?,
+					dataPianificata = ?,
 					dataEffettiva = ?,
 					descrizione = ?,
 					fk_coltura = ?,
@@ -224,6 +224,85 @@ import java.time.LocalDate;
 				throw e;
 			}
 			
+	}
+	
+	
+	@Override
+	public boolean existsColtivatorePerProprietario(String email_colt, String email_prop)throws Exception{
+		String sql="""
+				SELECT 1
+				FROM Attivita a
+				JOIN Coltura c ON a.fk_coltura = c.id_coltura
+				JOIN ProgettoStagionale p ON c.fk_progetto = p.id_progetto
+				JOIN Lotto l ON p.fk_lotto = l.id_lotto
+				WHERE a.fk_coltivatore = ?
+				AND l.fk_proprietario = ?
+				LIMIT 1
+				""";
+		
+		try(Connection conn=ConnectionFactory.getInstance().getConnection();
+			PreparedStatement ps=conn.prepareStatement(sql)){
+			
+			ps.setString(1, email_colt);
+			ps.setString(2, email_prop);
+			
+			try(ResultSet rs=ps.executeQuery()){
+				return rs.next();
+			}
+		}
+		
+	}
+	
+	
+	@Override
+	public boolean existsAttivitaPerProprietario(int id_attivita, String email_prop)throws Exception{
+		String sql="""
+				SELECT 1
+				FROM Attivita a
+				JOIN Coltura c ON a.fk_coltura = c.id_coltura
+				JOIN ProgettoStagionale p ON c.fk_progetto = p.id_progetto
+				JOIN Lotto l ON p.fk_lotto = l.id_lotto
+				WHERE a.id_attivita = ?
+				AND l.fk_proprietario = ?
+				LIMIT 1
+				""";
+
+		try(Connection conn=ConnectionFactory.getInstance().getConnection();
+				PreparedStatement ps=conn.prepareStatement(sql)){
+				
+				ps.setInt(1, id_attivita);
+				ps.setString(2, email_prop);
+				
+				try(ResultSet rs=ps.executeQuery()){
+					return rs.next();
+				}
+			}
+		
+	}
+	
+	
+	@Override
+	public boolean existsAttivitaInProgetto(int id_attivita, int id_progetto)throws Exception{
+		String sql="""
+				SELECT 1
+				FROM Attivita a
+				JOIN Coltura c ON a.fk_coltura = c.id_coltura
+				WHERE a.id_attivita = ?
+				AND c.fk_progetto = ?
+				LIMIT 1
+				""";
+
+		try(Connection conn=ConnectionFactory.getInstance().getConnection();
+				PreparedStatement ps=conn.prepareStatement(sql)){
+				
+				ps.setInt(1, id_attivita);
+				ps.setInt(2, id_progetto);
+				
+				try(ResultSet rs=ps.executeQuery()){
+					return rs.next();
+				}
+			}
+		
 	}
 
 }

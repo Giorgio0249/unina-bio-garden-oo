@@ -13,24 +13,21 @@ import it.unina.biogarden.model.ReportLotto;
 public class ReportService {
 	
 	private final ReportLottoDao reportLottoDao;
-	private final LottoDao lottoDao;
 	
-	public ReportService(ReportLottoDao reportLottoDao, LottoDao lottoDao) {
+	private final LottoService lottoService;
+	
+	public ReportService(ReportLottoDao reportLottoDao, LottoService lottoService) {
 		this.reportLottoDao=reportLottoDao;
-		this.lottoDao=lottoDao;
+		this.lottoService=lottoService;
 	}
 	
 	public ReportService() {
-		this(DaoFactory.createReportLottoDao(), DaoFactory.createLottoDao());
+		this(DaoFactory.createReportLottoDao(), new LottoService());
 	}
 	
 	public List<ReportLotto> getReportPerLotto(Proprietario proprietario, int id_lotto)throws Exception{
 		
-		Lotto lotto=lottoDao.findById(id_lotto);
-		
-		if(lotto==null) {
-			throw new IllegalArgumentException("IL lotto ("+id_lotto+") non esiste.");
-		}
+		Lotto lotto=lottoService.findById(id_lotto);
 		
 		if(!lotto.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 			throw new IllegalArgumentException("Non puoi vedere il report di un lotto che non è tuo.");

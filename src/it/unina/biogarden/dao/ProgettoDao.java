@@ -19,5 +19,7 @@ public interface ProgettoDao {
 	public int update(ProgettoStagionale p)throws Exception;
 	
 	public int delete(int id_progetto)throws Exception;
+	
+	public boolean existsProgettoPerProprietario(int id_progetto, String email_prop)throws Exception;
 
 }

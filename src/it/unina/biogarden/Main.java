@@ -216,16 +216,16 @@ public class Main {
 		try {
 			AttivitaService a=new AttivitaService();
 			Attivita aa=new Attivita(
-					0,
-					TipoAttivita.IRRIGAZIONE,
+					9,
+					TipoAttivita.SEMINA,
 					StatoAttivita.PIANIFICATA,
-					LocalDate.of(2025, 12, 28),
+					LocalDate.of(2025, 12, 30),
 					null,
-					"irrigazione pomodori.",
-					600,
+					"irrigazione di carote.",
+					3,
 					"colt1@bio.it");
-			ProprietarioDao p=new ProprietarioDaoPg();
-			Proprietario pp=p.authenticate("owner2@biogarden.it", "Password2");
+			//ProprietarioDao p=new ProprietarioDaoPg();
+			//Proprietario pp=p.authenticate("owner2@biogarden.it", "Password2");
 			
 			//a.createAttivitaPerProprietario(pp, aa);
 			//a.updateStatoAttivitaPerProprietario(pp, 29, StatoAttivita.COMPLETATA);
@@ -238,10 +238,28 @@ public class Main {
 			//ProgettoService ppp=new ProgettoService();
 			//ppp.findAllByProprietario("owner1@biogarden.it").forEach(System.out::println);
 			
-			ReportService r=new ReportService();
+			/*ReportService r=new ReportService();
 			r.getReportPerLotto(pp, 4).forEach(System.out::println);
+			*/
+			
+			ProprietarioService ps=new ProprietarioService();
+			Proprietario prop=ps.authenticate("owner2@biogarden.it", "Password2");
+
+			/*NotificaService ns=new NotificaService();
+			
+			ns.generaAutomaticheDaView(prop);*/
+			
+			RaccoltaService rs=new RaccoltaService();
+			//rs.deleteRaccoltaPerProprietario(prop, 14);
+			
+			ProgettoService pss=new ProgettoService();
+			ProgettoStagionale prog=new ProgettoStagionale(1111, "aujajws", Stagione.INVERNO, 2026, 
+															LocalDate.of(2026, 12, 1), LocalDate.of(2026, 12, 25), 4, null);
+			
+			a.updateStatoAttivitaPerProprietario(prop, 9, StatoAttivita.COMPLETATA);
 			
 			
+			//ns.generaAutomaticheDaView(prop);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

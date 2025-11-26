@@ -29,4 +29,16 @@ public class DaoFactory {
 	public static ReportLottoDao createReportLottoDao() {
 		return new ReportLottoDaoPg();
 	}
+	
+	public static NotificaDao createNotificaDao() {
+		return new NotificaDaoPg();
+	}
+	
+	public static ProprietarioDao createProprietarioDao() {
+		return new ProprietarioDaoPg();
+	}
+	
+	public static ColtivatoreDao createColtivatoreDao(){
+		return new ColtivatoreDaoPg();
+	}
 }

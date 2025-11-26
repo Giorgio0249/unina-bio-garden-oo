@@ -14,17 +14,18 @@ import it.unina.biogarden.model.Proprietario;
 public class ColturaService {
 	
 	private final ColturaDao colturaDao;
-	private final ProgettoDao progettoDao;
-	private final LottoDao lottoDao;
 	
-	public ColturaService(ColturaDao colturaDao, ProgettoDao progettoDao, LottoDao lottoDao) {
+	private final ProgettoService progettoService;
+	private final LottoService lottoService;
+	
+	public ColturaService(ColturaDao colturaDao, ProgettoService progettoService, LottoService lottoService) {
 		this.colturaDao=colturaDao;
-		this.progettoDao=progettoDao;
-		this.lottoDao=lottoDao;
+		this.progettoService=progettoService;
+		this.lottoService=lottoService;
 	}
 	
 	public ColturaService() {
-		this(DaoFactory.createColturaDao(), DaoFactory.createProgettoDao(), DaoFactory.createLottoDao());
+		this(DaoFactory.createColturaDao(), new ProgettoService(), new LottoService());
 	}
 	
 	
@@ -33,13 +34,9 @@ public class ColturaService {
 	
 	public int createColturaPerProprietario(Proprietario proprietario, Coltura coltura)throws Exception {
 		
-		ProgettoStagionale progetto=progettoDao.findById(coltura.getFk_progetto());
+		ProgettoStagionale progetto=progettoService.findById(coltura.getFk_progetto());
 		
-		if(progetto==null) {
-			throw new IllegalArgumentException("Il progetto("+coltura.getFk_progetto()+") non esiste.");
-		}
-		
-		Lotto lotto=lottoDao.findById(progetto.getFk_lotto());
+		Lotto lotto=lottoService.findById(progetto.getFk_lotto());
 		
 		//controllo ownership
 		if(!lotto.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
@@ -54,14 +51,11 @@ public class ColturaService {
 	
 	public void updateColturaPerProprietario(Proprietario proprietario, Coltura modificata)throws Exception{
 		
-		Coltura esistente=colturaDao.findById(modificata.getId_coltura());
-		if(esistente==null) {
-			throw new IllegalArgumentException("La coltura ("+modificata.getId_coltura()+") non esiste.");
-		}
+		Coltura esistente=this.findById(modificata.getId_coltura());
 		
 		//verifico se il proprietario possiede la coltura che vuole modificare
-		ProgettoStagionale progettoAttuale=progettoDao.findById(esistente.getFk_progetto());
-		Lotto lottoAttuale=lottoDao.findById(progettoAttuale.getFk_lotto());
+		ProgettoStagionale progettoAttuale=progettoService.findById(esistente.getFk_progetto());
+		Lotto lottoAttuale=lottoService.findById(progettoAttuale.getFk_lotto());
 		
 		if(!lottoAttuale.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 			throw new IllegalArgumentException("Non puoi modificare una coltura che non appartiene ai tuoi lotti.");
@@ -71,13 +65,9 @@ public class ColturaService {
 		
 		if(modificata.getFk_progetto()!=esistente.getFk_progetto()) {
 			
-			ProgettoStagionale progettoNuovo=progettoDao.findById(modificata.getFk_progetto());
+			ProgettoStagionale progettoNuovo=progettoService.findById(modificata.getFk_progetto());
 			
-			if(progettoNuovo==null) {
-				throw new IllegalArgumentException("Il nuovo progetto ("+modificata.getFk_progetto()+") non esiste.");
-			}
-			
-			Lotto lottoNuovo=lottoDao.findById(progettoNuovo.getFk_lotto());
+			Lotto lottoNuovo=lottoService.findById(progettoNuovo.getFk_lotto());
 			
 			if(!lottoNuovo.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 				throw new IllegalArgumentException("Non puoi spostare una coltura su un progetto che non è su un tuo lotto.");
@@ -92,13 +82,10 @@ public class ColturaService {
 	
 	public void deleteColturaPerProprietario(Proprietario proprietario, int id_coltura)throws Exception{
 		
-		Coltura esistente=colturaDao.findById(id_coltura);
-		if(esistente==null) {
-			throw new IllegalArgumentException("La coltura ("+id_coltura+") non esiste.");
-		}
+		Coltura esistente=this.findById(id_coltura);
 		
-		ProgettoStagionale progetto=progettoDao.findById(esistente.getFk_progetto());
-		Lotto lotto=lottoDao.findById(progetto.getFk_lotto());
+		ProgettoStagionale progetto=progettoService.findById(esistente.getFk_progetto());
+		Lotto lotto=lottoService.findById(progetto.getFk_lotto());
 		
 		if(!lotto.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 			throw new IllegalArgumentException("Non puoi cancellare una coltura che non e su un tuo lotto.");
@@ -110,10 +97,23 @@ public class ColturaService {
 	
 	//metodi di lettura
 	public List<Coltura> findByProgetto(int id_progetto)throws Exception{
-		return colturaDao.findByProgetto(id_progetto);
+		
+		progettoService.findById(id_progetto);
+		
+		List<Coltura> out=colturaDao.findByProgetto(id_progetto);
+		
+		if(out.isEmpty()) {
+			throw new IllegalArgumentException("Nessuna coltura sul progetto ("+id_progetto+") trovata.");
+		}
+		return out;
 	}
 	
 	public Coltura findById(int id_coltura)throws Exception{
-		return colturaDao.findById(id_coltura);
+		Coltura coltura=colturaDao.findById(id_coltura);
+		
+		if(coltura==null) {
+			throw new IllegalArgumentException("Nessuna coltura con id ("+id_coltura+") trovata.");
+		}
+		return coltura;
 	}
 }

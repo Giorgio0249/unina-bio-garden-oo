@@ -288,5 +288,29 @@ import java.util.List;
 			throw e;
 		}
 	}
+	
+	
+	@Override
+	public boolean existsProgettoPerProprietario(int id_progetto, String email_prop)throws Exception{
+		String sql="""
+				SELECT 1
+				FROM ProgettoStagionale p
+				JOIN Lotto l ON p.fk_lotto = l.id_lotto
+				WHERE p.id_progetto = ?
+				AND l.fk_proprietario = ?
+				LIMIT 1
+				""";
+		
+		try(Connection conn=ConnectionFactory.getInstance().getConnection();
+			PreparedStatement ps=conn.prepareStatement(sql)){
+			
+			ps.setInt(1, id_progetto);
+			ps.setString(2, email_prop);
+			
+			try(ResultSet rs=ps.executeQuery()){
+				return rs.next();
+			}
+		}
+	}
 
 }

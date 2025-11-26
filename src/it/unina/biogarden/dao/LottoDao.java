@@ -10,8 +10,6 @@ public interface LottoDao {
 	
 	public Lotto findById(int id_lotto)throws Exception;
 	
-	public int create(Lotto l)throws Exception;
-	
-	public void delete(int id_lotto)throws Exception;
+	public List<Lotto> findAll()throws Exception;
 	
 }

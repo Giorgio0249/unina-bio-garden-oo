@@ -1,5 +1,6 @@
 package it.unina.biogarden.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import it.unina.biogarden.dao.AttivitaDao;
@@ -21,28 +22,32 @@ public class AttivitaService {
 	private final ColturaDao colturaDao;
 	private final LottoDao lottoDao;
 	private final ProgettoDao progettoDao;
+	
+	private final ColturaService colturaService;
+	private final ProgettoService progettoService;
+	private final LottoService lottoService;
 
-	public AttivitaService(AttivitaDao attivitaDao, ColturaDao colturaDao, LottoDao lottoDao, ProgettoDao progettoDao) {
+	public AttivitaService(AttivitaDao attivitaDao, ColturaDao colturaDao, LottoDao lottoDao, ProgettoDao progettoDao, ColturaService colturaService, ProgettoService progettoService, LottoService lottoService) {
 		this.attivitaDao=attivitaDao;
 		this.colturaDao=colturaDao;
 		this.lottoDao=lottoDao;
 		this.progettoDao=progettoDao;
+		this.colturaService=colturaService;
+		this.progettoService=progettoService;
+		this.lottoService=lottoService;
 	}
 	
 	public AttivitaService() {
-		this(DaoFactory.createAttivitaDao(), DaoFactory.createColturaDao(), DaoFactory.createLottoDao(), DaoFactory.createProgettoDao());
+		this(DaoFactory.createAttivitaDao(), DaoFactory.createColturaDao(), DaoFactory.createLottoDao(), DaoFactory.createProgettoDao(), new ColturaService(), new ProgettoService(), new LottoService());
 	}
 	
 	
 	public int createAttivitaPerProprietario(Proprietario proprietario, Attivita attivita)throws Exception {
 		
-		Coltura coltura=colturaDao.findById(attivita.getFk_coltura());
-		if(coltura==null) {
-			throw new IllegalArgumentException("La coltura ("+attivita.getFk_coltura()+") non esiste.");
-		}
+		Coltura coltura=colturaService.findById(attivita.getFk_coltura());
 		
-		ProgettoStagionale progetto=progettoDao.findById(coltura.getFk_progetto());
-		Lotto lotto=lottoDao.findById(progetto.getFk_lotto());
+		ProgettoStagionale progetto=progettoService.findById(coltura.getFk_progetto());
+		Lotto lotto=lottoService.findById(progetto.getFk_lotto());
 		
 		if(!lotto.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 			throw new IllegalArgumentException("Non puoi creare attività su colture che non appartengono ai tuoi lotti.");
@@ -57,14 +62,11 @@ public class AttivitaService {
 	
 	public void updateAttivitaPerProprietario(Proprietario proprietario, Attivita modificata)throws Exception{
 		
-		Attivita esistente=attivitaDao.findById(modificata.getId_attivita());
-		if(esistente==null) {
-			throw new IllegalArgumentException("L'attività ("+modificata.getId_attivita()+") non esiste.");
-		}
+		Attivita esistente=this.findById(modificata.getId_attivita());
 		
-		Coltura colturaAttuale=colturaDao.findById(esistente.getFk_coltura());
-		ProgettoStagionale progettoAttuale=progettoDao.findById(colturaAttuale.getFk_progetto());
-		Lotto lottoAttuale=lottoDao.findById(progettoAttuale.getFk_lotto());
+		Coltura colturaAttuale=colturaService.findById(esistente.getFk_coltura());
+		ProgettoStagionale progettoAttuale=progettoService.findById(colturaAttuale.getFk_progetto());
+		Lotto lottoAttuale=lottoService.findById(progettoAttuale.getFk_lotto());
 		
 		if(!lottoAttuale.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 			throw new IllegalArgumentException("Non puoi modificare un'attività che non appartiene ai tuoi lotti.");
@@ -72,19 +74,16 @@ public class AttivitaService {
 		
 		
 		if(modificata.getFk_coltura()!=esistente.getFk_coltura()) {
-			Coltura colturaNuova=colturaDao.findById(modificata.getFk_coltura());
-			if(colturaNuova==null) {
-				throw new IllegalArgumentException("La nuova coltura ("+modificata.getFk_coltivatore()+") non esiste.");
-			}
 			
-			ProgettoStagionale progettoNuovo=progettoDao.findById(colturaNuova.getFk_progetto());
-			Lotto lottoNuovo=lottoDao.findById(progettoNuovo.getFk_lotto());
+			Coltura colturaNuova=colturaService.findById(modificata.getFk_coltura());
+			
+			ProgettoStagionale progettoNuovo=progettoService.findById(colturaNuova.getFk_progetto());
+			Lotto lottoNuovo=lottoService.findById(progettoNuovo.getFk_lotto());
 			
 			if(!lottoNuovo.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 				throw new IllegalArgumentException("Non puoi spostare un'attività su una coltura che non è su un tuo lotto.");
 			}
 		}
-		
 		
 		attivitaDao.update(modificata);
 		System.out.println("Attività ("+modificata.getId_attivita()+") modificata con successo.");
@@ -92,14 +91,11 @@ public class AttivitaService {
 	
 	public void deleteAttivitaPerProprietario(Proprietario proprietario, int id_attivita)throws Exception {
 		
-		Attivita attivita=attivitaDao.findById(id_attivita);
-		if(attivita==null) {
-			throw new IllegalArgumentException("L'attività ("+id_attivita+") non esiste.");
-		}
+		Attivita attivita=this.findById(id_attivita);
 		
-		Coltura coltura=colturaDao.findById(attivita.getFk_coltura());
-		ProgettoStagionale progetto=progettoDao.findById(coltura.getFk_progetto());
-		Lotto lotto=lottoDao.findById(progetto.getFk_lotto());
+		Coltura coltura=colturaService.findById(attivita.getFk_coltura());
+		ProgettoStagionale progetto=progettoService.findById(coltura.getFk_progetto());
+		Lotto lotto=lottoService.findById(progetto.getFk_lotto());
 		
 		if(!lotto.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 			throw new IllegalArgumentException("Non puoi cancellare un'attività che non appartiene ai tuoi lotti.");
@@ -112,19 +108,15 @@ public class AttivitaService {
 	
 	public void updateStatoAttivitaPerProprietario(Proprietario proprietario, int id_attivita, StatoAttivita stato)throws Exception{
 		
-		Attivita esistente=attivitaDao.findById(id_attivita);
-		if(esistente==null) {
-			throw new IllegalArgumentException("L'attività ("+id_attivita+") non esiste.");
-		}
+		Attivita esistente=this.findById(id_attivita);
 		
-		Coltura colturaAttuale=colturaDao.findById(esistente.getFk_coltura());
-		ProgettoStagionale progettoAttuale=progettoDao.findById(colturaAttuale.getFk_progetto());
-		Lotto lottoAttuale=lottoDao.findById(progettoAttuale.getFk_lotto());
+		Coltura colturaAttuale=colturaService.findById(esistente.getFk_coltura());
+		ProgettoStagionale progettoAttuale=progettoService.findById(colturaAttuale.getFk_progetto());
+		Lotto lottoAttuale=lottoService.findById(progettoAttuale.getFk_lotto());
 		
 		if(!lottoAttuale.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 			throw new IllegalArgumentException("Non puoi modificare lo stato di un'attività che non appartiene ai tuoi lotti.");
 		}
-		
 		
 		attivitaDao.updateStato(id_attivita, stato);
 		System.out.format("Stato attività (%d) modificato con successo (%s --> %s).", id_attivita, esistente.getStato().toString(), stato.toString());
@@ -132,12 +124,22 @@ public class AttivitaService {
 	
 	//metodi di lettura
 	public List<Attivita> findByColtura(int id_coltura)throws Exception{
-		return attivitaDao.findByColtura(id_coltura);
+		colturaService.findById(id_coltura);
+		
+		List<Attivita> out=attivitaDao.findByColtura(id_coltura);
+		if(out.isEmpty()) {
+			throw new IllegalArgumentException("Nessuna attività trovata sulla coltura ("+id_coltura+")");
+		}
+		return out;
 	}
 	
 	public Attivita findById(int id_attivita)throws Exception{
-		return attivitaDao.findById(id_attivita);
+		Attivita attivita=attivitaDao.findById(id_attivita);
+		
+		if(attivita==null) {
+			throw new IllegalArgumentException("Nessuna attività con id ("+id_attivita+") trovata.");
+		}
+		return attivita;
 	}
-	
 	
 }

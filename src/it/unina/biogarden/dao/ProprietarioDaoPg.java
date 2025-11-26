@@ -7,7 +7,7 @@ import java.sql.*;
 import it.unina.biogarden.model.Proprietario;
 
 
-public class ProprietarioDaoPg implements ProprietarioDao{
+ class ProprietarioDaoPg implements ProprietarioDao{
 	
 	@Override
 	public Proprietario authenticate(String email, String password)throws Exception{

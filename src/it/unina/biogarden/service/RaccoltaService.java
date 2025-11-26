@@ -16,31 +16,28 @@ import it.unina.biogarden.model.Raccolta;
 public class RaccoltaService {
 	
 	private final RaccoltaDao raccoltaDao;
-	private final ColturaDao colturaDao;
-	private final ProgettoDao progettoDao;
-	private final LottoDao lottoDao;
 	
-	public RaccoltaService(RaccoltaDao raccoltaDao, ColturaDao colturaDao, ProgettoDao progettoDao, LottoDao lottoDao) {
+	private final ColturaService colturaService;
+	private final ProgettoService progettoService;
+	private final LottoService lottoService;
+	
+	public RaccoltaService(RaccoltaDao raccoltaDao, ColturaService colturaService, ProgettoService progettoService, LottoService lottoService) {
 		this.raccoltaDao=raccoltaDao;
-		this.colturaDao=colturaDao;
-		this.progettoDao=progettoDao;
-		this.lottoDao=lottoDao;
+		this.colturaService=colturaService;
+		this.progettoService=progettoService;
+		this.lottoService=lottoService;
 	}
 	
 	public RaccoltaService() {
-		this(DaoFactory.createRaccoltaDao(), DaoFactory.createColturaDao(), DaoFactory.createProgettoDao(), DaoFactory.createLottoDao());
+		this(DaoFactory.createRaccoltaDao(), new ColturaService(), new ProgettoService(), new LottoService());
 	}
 	
 	
 	public int createRaccoltaPerProprietario(Proprietario proprietario, Raccolta raccolta)throws Exception{
 		
-		Coltura coltura=colturaDao.findById(raccolta.getFk_coltura());
-		if(coltura==null) {
-			throw new IllegalArgumentException("La coltura ("+raccolta.getFk_coltura()+") non esiste.");
-		}
-		
-		ProgettoStagionale progetto=progettoDao.findById(coltura.getFk_progetto());
-		Lotto lotto=lottoDao.findById(progetto.getFk_lotto());
+		Coltura coltura=colturaService.findById(raccolta.getFk_coltura());
+		ProgettoStagionale progetto=progettoService.findById(coltura.getFk_progetto());
+		Lotto lotto=lottoService.findById(progetto.getFk_lotto());
 		
 		if(!lotto.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 			throw new IllegalArgumentException("Non puoi registrare raccolte su colture che non appartengono ai tuoi lotti.");
@@ -54,14 +51,11 @@ public class RaccoltaService {
 	
 	public void deleteRaccoltaPerProprietario(Proprietario proprietario, int id_raccolta)throws Exception{
 		
-		Raccolta esistente=raccoltaDao.findById(id_raccolta);
-		if(esistente==null) {
-			throw new IllegalArgumentException("La raccolta ("+id_raccolta+") non esiste.");
-		}
+		Raccolta esistente=this.findById(id_raccolta);
 		
-		Coltura coltura=colturaDao.findById(esistente.getFk_coltura());
-		ProgettoStagionale progetto=progettoDao.findById(coltura.getFk_progetto());
-		Lotto lotto=lottoDao.findById(progetto.getFk_lotto());
+		Coltura coltura=colturaService.findById(esistente.getFk_coltura());
+		ProgettoStagionale progetto=progettoService.findById(coltura.getFk_progetto());
+		Lotto lotto=lottoService.findById(progetto.getFk_lotto());
 		
 		if(!lotto.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
 			throw new IllegalArgumentException("Non puoi cancellare una raccolta che non appartiene ai tuoi lotti.");
@@ -74,11 +68,21 @@ public class RaccoltaService {
 	
 	//metodi di lettura
 	public List<Raccolta> findByColtura(int id_coltura) throws Exception{
-		return raccoltaDao.findByColtura(id_coltura);
+		colturaService.findById(id_coltura);
+		
+		List<Raccolta> out=raccoltaDao.findByColtura(id_coltura);
+		if(out.isEmpty()) {
+			throw new IllegalArgumentException("Nessuna raccolta trovata sulla coltura ("+id_coltura+")");
+		}
+		return out;
 	}
 	
 	public Raccolta findById(int id_raccolta)throws Exception{
-		return raccoltaDao.findById(id_raccolta);
+		Raccolta raccolta=raccoltaDao.findById(id_raccolta);
+		if(raccolta==null) {
+			throw new IllegalArgumentException("Nessuna raccolta con id ("+id_raccolta+") trovata.");
+		}
+		return raccolta;
 	}
 
 }

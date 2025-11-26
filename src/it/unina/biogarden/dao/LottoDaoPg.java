@@ -80,63 +80,32 @@ import it.unina.biogarden.model.Lotto;
 		}
 	}
 	
-	@Override
-	public int create(Lotto l)throws Exception{
+	public List<Lotto> findAll()throws Exception{
 		String sql="""
-				INSERT INTO Lotto(posizione, superficie, fk_proprietario)
-				VALUES
-				(?, ?, ?)
-				RETURNING id_lotto
+				SELECT 
+					l.id_lotto,
+					l.posizione,
+					l.superficie,
+					l.fk_proprietario
+				FROM Lotto l
+				ORDER BY l.id_lotto
 				""";
 		
 		try(Connection conn=ConnectionFactory.getInstance().getConnection();
-			PreparedStatement ps=conn.prepareStatement(sql)){
+			Statement st=conn.createStatement();
+			ResultSet rs=st.executeQuery(sql)){
 			
-			ps.setString(1, l.getPosizione());
-			ps.setBigDecimal(2, l.getSuperficie());
-			ps.setString(3, l.getFk_proprietario());
+			List<Lotto> out=new ArrayList<>();
 			
-			try(ResultSet rs=ps.executeQuery()){
-				rs.next();
-				return rs.getInt("id_lotto");
+			while(rs.next()) {
+				out.add(new Lotto(rs.getInt("id_lotto"),
+									rs.getString("posizione"),
+									rs.getBigDecimal("superficie"),
+									rs.getString("fk_proprietario")));
 			}
+			return out;
 		}
 		
-		catch(SQLException e) {
-			System.err.println("SQLState="+e.getSQLState()+" code="+e.getErrorCode());
-			System.err.println("DB says: "+e.getMessage());
-			throw e;			
-		}
-		
-	}
-	
-	
-	@Override
-	public void delete(int id_lotto)throws Exception{
-		String sql="""
-				DELETE FROM Lotto
-				WHERE id_lotto = ?
-				""";
-		
-		try(Connection conn=ConnectionFactory.getInstance().getConnection();
-			PreparedStatement ps=conn.prepareStatement(sql)){
-			ps.setInt(1, id_lotto);
-			
-			int rimossi=ps.executeUpdate();
-			
-			if(rimossi==0) {
-				System.out.println("Nessun lotto trovato con id: "+id_lotto);
-			}
-			else {
-				System.out.format("Lotto (%d) rimosso con successo.\n", id_lotto);
-			}
-
-		}
-		catch(SQLException e) {
-			System.err.println("SQLState="+e.getSQLState()+" code="+e.getErrorCode());
-			System.err.println("DB says: "+e.getMessage());
-			throw e;
-		}
 	}
 
 }
