@@ -10,6 +10,8 @@ import it.unina.biogarden.service.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import it.unina.biogarden.gui.*;
+import javax.swing.*;
 
 
 public class Main {
@@ -213,7 +215,7 @@ public class Main {
 		//progetti 15 e 501 sono del primo priprietario e insistono rispettivamente su lotto 3 e 1
 		
 		
-		try {
+		/*try {
 			AttivitaService a=new AttivitaService();
 			Attivita aa=new Attivita(
 					9,
@@ -240,7 +242,7 @@ public class Main {
 			
 			
 			
-			ProprietarioService ps=new ProprietarioService();
+			/*ProprietarioService ps=new ProprietarioService();
 			Proprietario prop=ps.authenticate("owner1@biogarden.it", "Password1");
 
 			NotificaService ns=new NotificaService();
@@ -263,8 +265,13 @@ public class Main {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-		}
-				
+		}*/
+			
+		//INIZIO TEST GUI
+		
+		SwingUtilities.invokeLater(() -> {
+            new LoginFrame();
+        });
 
 	}
 

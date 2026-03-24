@@ -12,6 +12,7 @@ public class Attivita {
 	private final String descrizione;
 	private final int fk_coltura;
 	private final String fk_coltivatore;
+	private String nomeTipoColtura; // Campo aggiunto dopo non lo metto nel costruttore senno devo cambiare tutti i metodi che invocano attivita
 	
 	public Attivita(int id_attivita, TipoAttivita tipoAttivita, StatoAttivita stato, LocalDate dataPianificata, LocalDate dataEffettiva, String descrizione, int fk_coltura, String fk_coltivatore) {
 		this.id_attivita=id_attivita;
@@ -34,6 +35,13 @@ public class Attivita {
 	public String getDescrizione() {return descrizione;}
 	public int getFk_coltura() {return fk_coltura;}
 	public String getFk_coltivatore() {return fk_coltivatore;}
+	
+	public void setNomeTipoColtura(String nomeTipoColtura) {
+	    this.nomeTipoColtura = nomeTipoColtura;
+	}
+	public String getNomeTipoColtura() {
+	    return nomeTipoColtura != null ? nomeTipoColtura : "N.D.";
+	}
 	
 	@Override
 	public String toString() {

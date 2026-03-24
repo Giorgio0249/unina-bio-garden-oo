@@ -6,6 +6,6 @@ import it.unina.biogarden.model.ReportLotto;
 
 public interface ReportLottoDao {
 	
-	public List<ReportLotto> getStatisticheRaccoltaPerLotto(int id_lotto)throws Exception;
+	public List<ReportLotto> getStatisticheRaccoltaPerLotto(int id_progetto)throws Exception;
 
 }

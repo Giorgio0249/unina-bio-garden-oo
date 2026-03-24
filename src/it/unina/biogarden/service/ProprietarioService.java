@@ -21,7 +21,7 @@ public class ProprietarioService {
 		Proprietario proprietario=proprietarioDao.authenticate(email, password);
 		
 		if(proprietario==null) {
-			throw new IllegalArgumentException("Email o password errati.");
+			throw new IllegalArgumentException("Email o password errati!");
 		}
 		return proprietario;
 	}

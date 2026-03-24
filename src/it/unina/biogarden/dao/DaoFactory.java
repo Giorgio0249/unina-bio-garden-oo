@@ -41,4 +41,8 @@ public class DaoFactory {
 	public static ColtivatoreDao createColtivatoreDao(){
 		return new ColtivatoreDaoPg();
 	}
+	
+	public static TipoColturaDao createTipoColturaDao(){
+		return new TipoColturaDaoPg();
+	}
 }

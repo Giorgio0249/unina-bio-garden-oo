@@ -2,11 +2,17 @@ package it.unina.biogarden.dao;
 
 import it.unina.biogarden.model.ProgettoStagionale;
 import it.unina.biogarden.model.Stagione;
+import it.unina.biogarden.model.TipoColtura;
+import it.unina.biogarden.model.Attivita;
+import it.unina.biogarden.model.TipoAttivita;
 
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.math.BigDecimal;
 
  class ProgettoDaoPg implements ProgettoDao{
 	
@@ -311,6 +317,124 @@ import java.util.List;
 				return rs.next();
 			}
 		}
+	}
+	
+	@Override
+	public void insertProgettoCompleto(ProgettoStagionale p, List<TipoColtura> tipiColture, List<Attivita> listaAttivita) throws Exception {
+	    Connection conn = ConnectionFactory.getInstance().getConnection();
+	    
+	    try {
+	        conn.setAutoCommit(false); 
+
+	        // 1. Inserimento ProgettoStagionale con i nuovi campi
+	        int idProgetto;
+	        String sqlProgetto = """
+	                INSERT INTO ProgettoStagionale (nome, stagione, anno, dataInizio, dataFine, fk_lotto, descrizione)
+	                VALUES (?, ?::Stagione, ?, ?, ?, ?, ?) 
+	                RETURNING id_progetto
+	                """;
+	        
+	        try (PreparedStatement psP = conn.prepareStatement(sqlProgetto)) {
+	            psP.setString(1, p.getNome());
+	            psP.setString(2, p.getStagione().toString());
+	            psP.setInt(3, p.getAnno());
+	            psP.setObject(4, p.getDataInizio());
+	            
+	            // Gestione DATA FINE (Opzionale)
+	            psP.setObject(5, p.getDataFine()); // Se è null, setObject gestisce il NULL SQL
+	            
+	            psP.setInt(6, p.getFk_lotto());
+	            
+	            // Gestione DESCRIZIONE (Opzionale)
+	            psP.setString(7, p.getDescrizione());
+	            
+	            try (ResultSet rs = psP.executeQuery()) {
+	                if (rs.next()) {
+	                    idProgetto = rs.getInt(1);
+	                } else {
+	                    throw new SQLException("Errore creazione progetto: ID non restituito.");
+	                }
+	            }
+	        }
+
+	        // 2. Inserimento Colture (Resto del codice invariato...)
+	        Map<String, Integer> tipoToIdColtura = new HashMap<>();
+	        String sqlColtura = """
+	                INSERT INTO Coltura(quantitaPrevista, dataSemina, stato, fk_progetto, fk_tipo_coltura) 
+	                VALUES (?, ?, ?::StatoColtura, ?, ?) 
+	                RETURNING id_coltura
+	                """;
+
+	        try (PreparedStatement psC = conn.prepareStatement(sqlColtura)) {
+	            for (TipoColtura tc : tipiColture) {
+	                psC.setBigDecimal(1, BigDecimal.ZERO); 
+	                psC.setObject(2, null); 
+	                psC.setString(3, "AVVIATA"); 
+	                psC.setInt(4, idProgetto);
+	                psC.setString(5, tc.getNome()); 
+	                
+	                try (ResultSet rs = psC.executeQuery()) {
+	                    if (rs.next()) {
+	                        tipoToIdColtura.put(tc.getNome(), rs.getInt("id_coltura"));
+	                    }
+	                }
+	            }
+	        }
+
+	        // 3. Inserimento Attività (Fase A e B invariate...)
+	        String sqlAttivita = """
+	                INSERT INTO Attivita (tipoAttivita, stato, dataPianificata, dataEffettiva, descrizione, fk_coltura, fk_coltivatore)
+	                VALUES (?::TipoAttivita, ?::StatoAttivita, ?, ?, ?, ?, ?)
+	                """;
+	        
+	        try (PreparedStatement psA = conn.prepareStatement(sqlAttivita)) {
+	            for (Attivita att : listaAttivita) {
+	                if (att.getTipoAttivita().toString().equals("SEMINA")) {
+	                    configuraParametriAttivita(psA, att, tipoToIdColtura);
+	                    psA.addBatch();
+	                }
+	            }
+	            psA.executeBatch(); 
+
+	            for (Attivita att : listaAttivita) {
+	                if (!att.getTipoAttivita().toString().equals("SEMINA")) {
+	                    configuraParametriAttivita(psA, att, tipoToIdColtura);
+	                    psA.addBatch();
+	                }
+	            }
+	            psA.executeBatch(); 
+	        }
+
+	        conn.commit(); 
+	        
+	    } catch (SQLException e) {
+	        if (conn != null) conn.rollback(); 
+	        throw e; 
+	    } finally {
+	        if (conn != null) {
+	            conn.setAutoCommit(true);
+	            conn.close();
+	        }
+	    }
+	}
+	
+	private void configuraParametriAttivita(PreparedStatement psA, Attivita att, Map<String, Integer> tipoToIdColtura) throws SQLException {
+	    // Recupero ID Coltura dalla descrizione
+	    String desc = att.getDescrizione();
+	    String nomeColtura = desc.substring(desc.indexOf(":") + 2).split(" ")[0].trim();
+	    
+	    Integer idColturaVal = tipoToIdColtura.get(nomeColtura);
+	    if (idColturaVal == null) {
+	        idColturaVal = tipoToIdColtura.values().iterator().next();
+	    }
+
+	    psA.setString(1, att.getTipoAttivita().toString());
+	    psA.setString(2, "PIANIFICATA"); 
+	    psA.setObject(3, att.getDataPianificata());
+	    psA.setObject(4, null); 
+	    psA.setString(5, att.getDescrizione());
+	    psA.setInt(6, idColturaVal);
+	    psA.setString(7, att.getFk_coltivatore());
 	}
 
 }

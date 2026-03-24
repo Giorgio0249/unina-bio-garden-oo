@@ -7,7 +7,11 @@ import java.util.List;
 
 public interface AttivitaDao {
 	
+	public List<Attivita> findByColtivatore(String emailoltivatore)throws Exception;
+	
 	public List<Attivita> findByColtura(int id_coltura)throws Exception;
+	
+	public List<Attivita> findByProgetto(int id_progetto) throws Exception;
 	
 	public int create(Attivita a)throws Exception;
 	

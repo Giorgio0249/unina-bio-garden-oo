@@ -7,6 +7,7 @@ import java.util.Properties;
 
 public class ConnectionFactory {
 	
+	//variabile Singleton
 	private static final ConnectionFactory INSTANCE=new ConnectionFactory();
 	
 	private String url;

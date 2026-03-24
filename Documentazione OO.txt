@@ -1,0 +1,320 @@
+1. Struttura generale del progetto
+
+Il progetto è stato realizzato seguendo una struttura chiara e modulare, suddivisa in package distinti:
+it.unina.biogarden
+ ├── dao/
+ ├── model/
+ ├── service/
+ ├── ui/
+resources/
+ └── db.properties
+Motivazioni della suddivisione:
+
+model → contiene le entità Java che modellano il dominio applicativo.
+
+dao → incapsula l’accesso al DB PostgreSQL tramite JDBC.
+
+service → contiene la logica applicativa, le validazioni, la gestione dell’integrità.
+
+ui → interfaccia utente testuale Java (parte della consegna).
+
+resources/db.properties → configurazione esterna della connessione, per non hardcodare credenziali.
+
+Seguendo il principio MVC semplificato, la UI non accede mai direttamente al DB: tutto passa per i service.
+
+2. Connessione al DB e design pattern utilizzati
+2.1 ConnectionFactory (Pattern: Singleton)
+
+La connessione al DB è stata incapsulata tramite una classe Singleton:
+
+garantisce una sola configurazione centralizzata;
+
+evita duplicazione del codice di connessione;
+
+permette modifiche future senza toccare il resto del progetto.
+
+Carica le informazioni da db.properties, come richiesto dalla consegna.
+
+2.2 DAO Factory (Pattern: Factory)
+
+Per istanziare correttamente le DAO concrete è stata introdotta una DaoFactory.
+
+Motivazioni:
+
+separa l’interfaccia dalla sua implementazione (incapsulamento);
+
+permette eventuale estensione futura (es. DAOMock per test);
+
+migliora la manutenibilità.
+
+Le DAO concrete (*DaoPg) sono package-private, quindi non istanziabili dall’esterno, come buona pratica.
+
+3. Model: scelte principali
+
+Le entità sono state progettate in modo puro, senza logica applicativa al loro interno, per rispettare l’architettura a livelli.
+
+Entità implementate:
+
+Proprietario
+
+Coltivatore
+
+Lotto
+
+ProgettoStagionale
+
+Coltura
+
+Attivita
+
+Raccolta
+
+ReportLotto
+
+Notifica
+
+Enum: TipoAttivita, StatoAttivita, TipoNotifica, StatoColtura
+
+Scelte principali:
+
+✔ nessuna entità ha metodi che parlano col DB → tutto delegato ai Service
+✔ campi privati con getter/setter → incapsulamento
+✔ costruttori ben definiti e immutabilità per gli id generati dal DB
+
+4. DAO: scelte implementative
+
+Ogni DAO segue le caratteristiche:
+
+connessione tramite ConnectionFactory
+
+gestione esplicita di SQLException
+
+conversione corretta tra LocalDate, LocalDateTime e SQL
+
+uso sistematico di PreparedStatement per prevenire SQL injection
+
+Non sono presenti controlli di business nel DAO, in linea con la separazione dei livelli.
+
+Il DB applica integrità tramite:
+
+foreign key
+
+unique constraint
+
+trigger (da progetto BD)
+
+5. Service Layer: cuore della logica applicativa
+
+Il livello Service:
+
+applica tutte le regole applicative
+
+valida parametri e identità dei proprietari/coltivatori
+
+protegge l’integrità del sistema Java anche in caso di DB alterato
+
+svolge tutte le verifiche che NON sono compito del DB
+
+Ogni Service:
+
+chiama DAO tramite DaoFactory (eccetto Notifica, che ha 4 dipendenze → Service autonomi passati nel costruttore)
+
+non accede mai direttamente al DB (eccetto il punto obbligatorio delle notifiche, poi rimosso)
+
+6. Scelte principali per ciascun Service
+6.1 ProprietarioService & ColtivatoreService
+
+metodi di autenticazione
+
+validazione email non null
+
+solleva eccezioni se l'entità non esiste
+
+6.2 LottoService
+
+Validazioni limitate:
+il DB garantisce integrità → nel sistema OO non sono necessarie ulteriori verifiche.
+
+6.3 ProgettoService
+
+Controlli applicativi:
+
+verifica esistenza del Lotto (in caso di alterazione DB)
+
+validazione delle date
+
+verifica appartenenza del Lotto al proprietario
+
+Scelta progettuale importante:
+lasciare al DB la gestione dell'integrità referenziale tramite trigger e FK, evitando duplicazioni lato Java.
+
+6.4 ColturaService
+
+Controlli applicativi:
+
+verifica progetto associato
+
+impedisce duplicati di colture con stessa tipologia sullo stesso progetto
+
+delega la gestione di dataSemina al DB tramite trigger
+
+6.5 AttivitaService
+
+Validazioni:
+
+verifica esistenza coltura
+
+verifica appartenenza proprietario/coltivatore
+
+impedisce transizioni di stato illegali
+(coerente con i trigger BD che validano date e logica di semina)
+
+Gestione date:
+
+dataEffettiva viene impostata automaticamente dal Service quando lo stato diventa IN_CORSO.
+
+7. Scelte progettuali sulla gestione della SEMINA
+
+Questo punto è stato tra i più complessi e importanti.
+
+Requisito:
+
+dataSemina è un attributo derivato.
+
+Deve essere impostato:
+
+alla creazione dell’attività SEMINA (dataPianificata)
+
+oppure quando viene valorizzata dataEffettiva
+
+Soluzione:
+
+Trigger trg_attivita_semina_set_datasemina_f modificato per:
+✔ usare la dataPianificata solo al momento della pianificazione
+✔ usare la dataEffettiva quando l'attività entra in corso
+✔ applicare tutti i controlli temporali richiesti
+✔ gestire unicità della semina
+
+Trigger trg_coltura_protect_datasemina_f modificato per:
+✔ impedire modifiche manuali a dataSemina
+✔ consentire modifiche solo se coerenti con una SEMINA reale
+
+8. RaccoltaService
+
+Implementa:
+
+inserimento raccolta con validazioni
+
+controlli di coerenza date (tramite trigger già presenti)
+
+impedire raccolte con data futura (aggiunta nel trigger)
+
+Report gestito separatamente tramite ReportService.
+
+9. ReportService e Report DAO
+
+Richiesto dalla traccia.
+
+È stato creato un ReportLottoDaoPg con gruppo per coltura.
+
+Statistiche:
+
+minimo
+
+media
+
+massimo
+
+numero raccolte
+
+Include anche colture con zero raccolte (LEFT JOIN)
+
+Viene usato da ReportService come livello logico intermedio
+
+10. Sistema di Notifiche
+
+Requisito extra implementato in modo completo.
+
+10.1 Scelte principali
+
+Creata tabella Notifica nel DB (estensione leggera del tracciato originale).
+
+Model Notifica e enum TipoNotifica
+
+Dao dedicata NotificaDaoPg
+
+Service robusto con tutte le validazioni:
+✔ un proprietario può inviare notifiche a tutti
+✔ oppure a un singolo coltivatore
+✔ verifica che il coltivatore esista
+✔ verifica che progetto e attività appartengano al proprietario
+✔ impedisce che il proprietario elimini notifiche non proprie
+
+10.2 Notifiche automatiche
+
+Inizialmente implementate con query nel Service → corretto e spostato in NotificaDaoPg per rispettare l’architettura.
+
+11. Scelte sui controlli Java vs DB
+Filosofia adottata:
+
+Il DB garantisce integrità fisica e vincoli critici.
+
+Il Service Java garantisce integrità logica e validazioni applicative.
+
+Ragioni:
+✔ evita duplicazioni di vincoli
+✔ mantiene il codice più pulito
+✔ segue la responsabilità naturale dei due strati
+✔ semplifica la manutenzione
+
+12. Scelte sulla sicurezza applicativa
+
+Nessun uso di SQL dinamico.
+
+Parametrizzazione totale tramite PreparedStatement.
+
+Nessuna credenziale hardcodata nel codice.
+
+Proprietario autenticato sempre richiesto per operazioni critiche.
+
+Coltivatore non può accedere a dati di altri.
+
+13. Gestione delle eccezioni
+
+Utilizzata una strategia coerente:
+
+SQLException → lasciata propagare verso l’alto dopo logging
+
+IllegalArgumentException → per input invalidi lato applicazione
+
+NullPointerException prevenuto tramite validazioni iniziali
+
+messaggi sempre chiari e specifici al contesto
+
+14. Scelte per la UI
+
+UI testuale semplice con scopi:
+
+mostrare autenticazione proprietario/coltivatore
+
+lista progetti / attività / raccolte
+
+creazione notifiche manuali
+
+generazione notifiche automatiche
+
+aggiornamento stato attività
+
+Nessuna logica applicativa nella UI.
+
+15. Conclusione: valutazione finale della parte OO
+
+La parte OO realizzata soddisfa pienamente:
+
+✔ separazione pulita in layer (DAO/Service/UI)
+✔ uso corretto di design pattern
+✔ coerenza con il modello BD e i trigger forniti
+✔ integrazione del requisito extra notifiche
+✔ controlli applicativi robusti
+✔ gestione corretta di dataSemina e attività SEMINA
+✔ implementazione completa del report richiesto dalla traccia

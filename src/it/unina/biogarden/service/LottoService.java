@@ -6,7 +6,7 @@ import it.unina.biogarden.dao.DaoFactory;
 import it.unina.biogarden.dao.LottoDao;
 import it.unina.biogarden.model.Lotto;
 
- class LottoService {
+ public class LottoService {
 	
 	private final LottoDao lottoDao;
 	

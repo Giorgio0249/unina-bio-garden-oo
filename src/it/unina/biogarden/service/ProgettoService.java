@@ -1,6 +1,7 @@
 package it.unina.biogarden.service;
 
 import java.util.List;
+import java.time.LocalDate;
 
 import it.unina.biogarden.dao.DaoFactory;
 import it.unina.biogarden.dao.LottoDao;
@@ -9,6 +10,10 @@ import it.unina.biogarden.model.Lotto;
 import it.unina.biogarden.model.Notifica;
 import it.unina.biogarden.model.ProgettoStagionale;
 import it.unina.biogarden.model.Proprietario;
+import it.unina.biogarden.model.TipoColtura;
+import it.unina.biogarden.model.Attivita;
+import it.unina.biogarden.model.Stagione;
+
 
 public class ProgettoService {
 	
@@ -137,6 +142,43 @@ public class ProgettoService {
 			throw new IllegalArgumentException("Nessun progetto trovato sul lotto ("+id_lotto+").");
 		}
 		return out;
+	}
+	
+	public void creaProgettoConDatiCompleti(Proprietario proprietario, ProgettoStagionale p, List<TipoColtura> colture, List<Attivita> listaAttivita) throws Exception {
+	    
+	    Lotto lotto = lottoService.findById(p.getFk_lotto());
+	    
+	    if(!lotto.getFk_proprietario().equalsIgnoreCase(proprietario.getEmail())) {
+	        throw new IllegalArgumentException("Il lotto (" + lotto.getId_lotto() + ") non ti appartiene!");
+	    }
+	    
+	    // 1) CALCOLO DATI OBBLIGATORI (per i trigger)
+	    int anno = p.getDataInizio().getYear();
+	    Stagione stagione = determinaStagione(p.getDataInizio());
+	    
+	    // 2) CREAZIONE OGGETTO VALIDATO
+	    ProgettoStagionale progettoCompleto = new ProgettoStagionale(
+	        0, 
+	        p.getNome(), 
+	        stagione, 
+	        anno, 
+	        p.getDataInizio(), 
+	        p.getDataFine(), 
+	        p.getFk_lotto(), 
+	        p.getDescrizione()
+	    );
+	    
+	    // 3) CHIAMATA AL DAO (Passiamo l'oggetto COMPLETO)
+	    progettoDao.insertProgettoCompleto(progettoCompleto, colture, listaAttivita);
+	}
+	
+	//calcoliamo in automatico la stagione, non la facciamo inserire all'utente
+	private Stagione determinaStagione(LocalDate data) {
+	    int mese = data.getMonthValue();
+	    if (mese >= 3 && mese <= 5) return Stagione.PRIMAVERA;
+	    if (mese >= 6 && mese <= 8) return Stagione.ESTATE;
+	    if (mese >= 9 && mese <= 11) return Stagione.AUTUNNO;
+	    return Stagione.INVERNO;
 	}
 	
 }

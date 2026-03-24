@@ -2,7 +2,6 @@ package it.unina.biogarden.model;
 
 import java.time.LocalDate;
 
-//Coltivatore serve solo classe model(il coltivatore non deve loggarsi)
 public class Coltivatore {
 
 	private final String email;
